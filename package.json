@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:ui": "rm -rf dist && cd /Users/aaron/Desktop/Dev/Full-Stack-Open/part3/phonebookfrontend && npm run build && cp -r dist /Users/aaron/Desktop/Dev/phonebookbackend",
+  "deploy:full": "npm run build:ui && git add . && git commit -m 'uibuild' && git push"
+
   },
   "author": "Aaron Taylor",
   "license": "MIT",
