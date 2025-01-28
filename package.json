@@ -8,14 +8,14 @@
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:ui": "rm -rf dist && cd /Users/aaron/Desktop/Dev/Full-Stack-Open/part3/phonebookfrontend && npm run build && cp -r dist /Users/aaron/Desktop/Dev/phonebookbackend",
-  "deploy:full": "npm run build:ui && git add . && git commit -m 'rebuild' && git push"
-
+    "deploy:full": "npm run build:ui && git add . && git commit -m 'rebuild' && git push"
   },
   "author": "Aaron Taylor",
   "license": "MIT",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "mongoose": "^8.9.5",
     "morgan": "^1.10.0"
   },
   "devDependencies": {
