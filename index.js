@@ -2,6 +2,8 @@ const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
 const app = express()
+require('dotenv').config()
+const Person = require('./models/person')
 
 app.use(express.json())
 
@@ -14,44 +16,23 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 app.use(cors())
 app.use(express.static('dist'))
 
-let contacts = [
-    {
-        "id": "1",
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": "2",
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": "3",
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": "4",
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122"
-    }
-]
+contacts = []
 
 app.get('/api/persons/', (request, response) => {
     console.log("Recieved GET request")
-    response.json(contacts)
-    console.log("Responding")
+    const body = request.body
+    const people = Person.find({}).then(people => {
+        response.json(people)
+    })
 })
 
 app.get('/api/persons/:id', (request, response) => {
     const id = request.params.id
-    const contact = contacts.find(contact => contact.id === id)
-    if (contact) {
-        response.json(contact)
-    } else {
-        console.log("No data found for this id")
-        response.status(404).end()
-    }
+    
+    Person.findById(id).then(person => {
+        response.json(person)
+    })
+    .catch(() => console.log("Couldn't find person silly"))
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -61,7 +42,6 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 app.post('/api/persons/', (request, response) => {
-    const id = String(Math.floor(Math.random() * 900719925474))
     const newContact = request.body
 
     if (!newContact.name) {
@@ -82,10 +62,16 @@ app.post('/api/persons/', (request, response) => {
         })
     }
 
-    newContact.id = id
-    contacts = contacts.concat(newContact)
-    response.json(newContact)
-    console.log(newContact)
+    const newPerson = new Person({
+        name: newContact.name,
+        number: newContact.number,
+    })
+
+    newPerson.save().then(savedPerson => {
+        response.json(savedPerson)
+        console.log(savedPerson)
+    })
+    
     morgan('body')
 })
 
@@ -103,7 +89,7 @@ app.get('/info/', (request, response) => {
 
 
 /*Server Setup*/
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
