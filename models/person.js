@@ -25,8 +25,7 @@ mongoose.connect(url)
         validator: (num) => /^\d{2,3}-\d+$/.test(num),
         message: props => `'${props.value}' is not a valid phone number! Use format XX-XXXXXXX or XXX-XXXXXXX.`
 
-      },
-      required: true
+      }
     }
   })
 
