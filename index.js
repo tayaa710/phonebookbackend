@@ -8,9 +8,22 @@ const Person = require('./models/person')
 app.use(express.json())
 
 morgan.token('body', (request, response) => {
-    if (request.method === 'POST'){return JSON.stringify(request.body)}
-    else {return ""}
+    if (request.method === 'POST') { return JSON.stringify(request.body) }
+    else { return "" }
 })
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+
+    if (error.name === 'CastError') {
+        return response.status(400).send({ error: 'malformatted id' })
+    }
+    else if (error.name === 'ValidationError') {
+        return response.status(400).json({ error: error.message })
+      }
+
+    next(error)
+}
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 app.use(cors())
@@ -18,43 +31,34 @@ app.use(express.static('dist'))
 
 contacts = []
 
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+
 app.get('/api/persons/', (request, response) => {
-    console.log("Recieved GET request")
-    const body = request.body
-    const people = Person.find({}).then(people => {
+    Person.find({}).then(people => {
         response.json(people)
     })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-    const id = request.params.id
-    
-    Person.findById(id).then(person => {
+app.get('/api/persons/:id', (request, response, next) => {
+    Person.findById(request.params.id).then(person => {
+        if (!person) {
+            response.status(404).json({ error: 'Person not found' })
+        }
         response.json(person)
-    })
-    .catch(() => console.log("Couldn't find person silly"))
+    }).catch(error => next(error))
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-    const id = request.params.id
-    contacts = contacts.filter(contact => contact.id !== id)
-    response.status(204).end()
+app.delete('/api/persons/:id', (request, response, next) => {
+    Person.findByIdAndDelete(request.params.id).then(result => {
+        response.status(204).end()
+    }).catch(error => next(error))
 })
 
-app.post('/api/persons/', (request, response) => {
+app.post('/api/persons/', (request, response, next) => {
     const newContact = request.body
-
-    if (!newContact.name) {
-        return response.status(400).json({
-            error: 'Name missing'
-        })
-    }
-
-    if (!newContact.number) {
-        return response.status(400).json({
-            error: 'Number missing'
-        })
-    }
 
     if (contacts.find(contact => contact.name === newContact.name)) {
         return response.status(409).json({
@@ -70,22 +74,33 @@ app.post('/api/persons/', (request, response) => {
     newPerson.save().then(savedPerson => {
         response.json(savedPerson)
         console.log(savedPerson)
-    })
-    
+    }).catch(error => next(error))
+
     morgan('body')
 })
 
-app.get('/info/', (request, response) => {
-    const contactsCount = contacts.length
-    const requestTime = Date(Date.now());
-    const peoplePlural = contactsCount === 1 ? "person" : "people"
-    response.send(`
-        <p>Phonebook has info for ${contactsCount} ${peoplePlural}</p>
-        <p>${requestTime}</p>
-
-        `
-    )
+app.put('/api/persons/:id', (request, response, next) => {
+    const { name, number } = request.body
+    Person.findByIdAndUpdate(request.params.id, { name, number }, { new: true, runValidators: true, context: 'query' })
+        .then(updatedPerson => {
+            response.json(updatedPerson)
+        }).catch(error => next(error))
 })
+
+app.get('/info/', (request, response,next) => {
+    Person.find({}).then(peopleArray => {
+        const contactsCount = peopleArray.length
+        const requestTime = Date(Date.now());
+        const peoplePlural = contactsCount === 1 ? "person" : "people"
+        response.send(`
+            <p>Phonebook has info for ${contactsCount} ${peoplePlural}</p>
+            <p>${requestTime}</p>
+            `
+        )
+    }).catch(error => next(error))
+})
+app.use(unknownEndpoint)
+app.use(errorHandler)
 
 
 /*Server Setup*/
