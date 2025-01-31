@@ -7,9 +7,9 @@ const Person = require('./models/person')
 
 app.use(express.json())
 
-morgan.token('body', (request, response) => {
+morgan.token('body', (request) => {
     if (request.method === 'POST') { return JSON.stringify(request.body) }
-    else { return "" }
+    else { return '' }
 })
 
 const errorHandler = (error, request, response, next) => {
@@ -20,7 +20,7 @@ const errorHandler = (error, request, response, next) => {
     }
     else if (error.name === 'ValidationError') {
         return response.status(400).json({ error: error.message })
-      }
+    }
 
     next(error)
 }
@@ -28,8 +28,6 @@ const errorHandler = (error, request, response, next) => {
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 app.use(cors())
 app.use(express.static('dist'))
-
-contacts = []
 
 const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
@@ -52,19 +50,13 @@ app.get('/api/persons/:id', (request, response, next) => {
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
-    Person.findByIdAndDelete(request.params.id).then(result => {
+    Person.findByIdAndDelete(request.params.id).then(() => {
         response.status(204).end()
     }).catch(error => next(error))
 })
 
 app.post('/api/persons/', (request, response, next) => {
     const newContact = request.body
-
-    if (contacts.find(contact => contact.name === newContact.name)) {
-        return response.status(409).json({
-            error: 'name already in use'
-        })
-    }
 
     const newPerson = new Person({
         name: newContact.name,
@@ -90,8 +82,8 @@ app.put('/api/persons/:id', (request, response, next) => {
 app.get('/info/', (request, response,next) => {
     Person.find({}).then(peopleArray => {
         const contactsCount = peopleArray.length
-        const requestTime = Date(Date.now());
-        const peoplePlural = contactsCount === 1 ? "person" : "people"
+        const requestTime = Date(Date.now())
+        const peoplePlural = contactsCount === 1 ? 'person' : 'people'
         response.send(`
             <p>Phonebook has info for ${contactsCount} ${peoplePlural}</p>
             <p>${requestTime}</p>
